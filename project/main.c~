@@ -1,0 +1,69 @@
+#include <msp430.h>
+#include <libTimer.h>
+#include "lcdutils.h"
+#include "lcddraw.h"
+
+typedef struct {
+  short col, row;
+} Pos;
+
+#define LED BIT6
+
+#define SWITCHES 15
+
+short row = 50;
+short interrupts = 1;
+int drawScreen = 1;
+
+void draw(short height, short width){
+  fillRectangle(64, 80, width, height, COLOR_BLUE);
+}
+
+void switch_init(){
+  P2REN |= SWITCHES;
+  P2IE |= SWITCHES;
+  P2OUT |= SWITCHES;
+  P2DIR &= ~SWITCHES;
+}
+
+ //Implement WDT interrupt so you can make the shape move down every second
+ //Test collisions at certain coordinates maybe with a line or just edge of screen
+ //Implement buttons that can interact with program during collisions
+void __interrupt_vec(WDT_VECTOR) WDT(){
+  if((interrupts++) == 250){
+    interrupts = 1;
+    fillRectangle(64, 80, 10,row, BLACK );
+    row++;
+    fillRectangle(64, 90, 10, row, COLOR_BLUE);
+  }
+}
+
+void main(){
+  configureClocks();
+  lcd_init();
+  clearScreen(BLACK);
+  draw(50, 10);
+  enableWDTInterrupts();
+  or_sr(0x8);
+  /*
+  P1DIR |= LED;
+  P1OUT |= LED;
+  configureClocks();
+  lcd_init();
+  switch_init();
+
+  enableWDTInterrupts();
+  or_sr(0x8);
+  draw(10, 10);
+  clearScreen(COLOR_BLACK);
+  while(1){
+    if(drawScreen){
+      drawScreen = 0;
+      draw(10, 10);
+      
+    }
+    P1OUT &= ~LED;
+    or_sr(0x10);
+    P1OUT |= LED;
+  } */
+}
