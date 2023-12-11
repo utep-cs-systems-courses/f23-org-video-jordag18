@@ -24,7 +24,7 @@ short velocity = 30;
 short height = 30;
 short lineRow = 100;
 
-short controlCol = (screenWidth/2) - 5;
+short controlCol = (screenWidth/2) - 20;
 short controlRow = 0;
 
 short interrupts = 1;
@@ -34,7 +34,25 @@ short redrawScreen = 0;
 
 //Button pressing related states
 short correct = 0;
-short playTheme = 0;
+int playSkrillex = 0;
+
+int halfNoteLength = 200;
+
+int quarterNoteLength = 94;
+
+int eighthNoteLength = 48;
+
+int seconds = 0;
+
+int notes[]= {1275, 637, 1431, 637, 536, 637, 851,
+
+	      956, 536, 2863, 1072, 1136, 1431, 1607,
+
+	      1703, 1912, 1072, 1431, 1072, 1275, 1072};
+
+int noteLength[] = {0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0};
+
+int i = 0;
 
 short BLOCK_COLOR = COLOR_BLUE;
 
@@ -42,8 +60,8 @@ void draw()
 {
   if (correct == 6){
     clearScreen(WHITE);
-    playTheme = 1;
-    interrupts = 0;
+    playSkrillex = 1;
+    interrupts = 1;
   }
   else{
     and_sr(~8);    //Masking interrupts
@@ -51,24 +69,15 @@ void draw()
       redrawScreen = 0;
       clearScreen(BG_COLOR);
       redrawLine = 1;
-      fillRectangle(controlCol, controlRow + pastRow, 10, height, BG_COLOR);
-      fillRectangle(controlCol, controlRow + currentRow, 10, height, BLOCK_COLOR);
-      pastRow = currentRow;
+    }
+    fillRectangle(controlCol , controlRow + pastRow, 40, height, BG_COLOR);
+    fillRectangle(controlCol, controlRow + currentRow, 40, height, BLOCK_COLOR);
+    pastRow = currentRow;
 
-      drawRectOutline(0, 0, 5, 50, COLOR_GREEN);
-      fillRectangle(0, 0, 5, 50, BG_COLOR);
-      fillRectangle(0, 0, 5, 10*correct, COLOR_GREEN);
+    drawRectOutline(0, 0, 5, 50, COLOR_PURPLE);
+    fillRectangle(0, 0, 5, 50, BG_COLOR);
+    fillRectangle(0, 0, 5, 10*correct, COLOR_PURPLE);
     
-    }
-    else{
-      fillRectangle(controlCol , controlRow + pastRow, 10, height, BG_COLOR);
-      fillRectangle(controlCol, controlRow + currentRow, 10, height, BLOCK_COLOR);
-      pastRow = currentRow;
-
-      drawRectOutline(0, 0, 5, 50, COLOR_GREEN);
-      fillRectangle(0, 0, 5, 50, BG_COLOR);
-      fillRectangle(0, 0, 5, 10*correct, COLOR_GREEN);
-    }
     or_sr(8);  //Unmasking interrupts
   }
 }
@@ -89,17 +98,41 @@ void switch_init()
   P2OUT |= SWITCHES;
   P2DIR &= ~SWITCHES;
 }
-//Translate one state machine to assembly
- //Add win screen and FF victory fanfare
+
+void play_scaryMonster()
+{
+  seconds++;
+  if(i > 20){
+    i = 0;
+    playSkrillex = 0;
+  }
+  if(noteLength[i]){
+    if(!i)
+      buzzer_set_period(notes[0]);
+    if(seconds >= quarterNoteLength){
+      seconds = 0;
+      i++;
+      buzzer_set_period(notes[i]);
+    }
+  }
+  else{
+    if(seconds >= eighthNoteLength){
+      seconds = 0;
+      i++;
+      buzzer_set_period(notes[i]);
+    }
+  }
+}
+
+
 void wdt_c_handler()
 {
   interrupts++;
-  if (interrupts == 250 || interrupts == 500 || interrupts == 750){    //every second do this
-    currentRow+=velocity;                                                                    
+  if (interrupts == 250){  //every second do this
+    interrupts = 0;
+    currentRow+=velocity;
     drawBlock = 1;                                                          
   }
-  if (interrupts == 750)
-    interrupts = 1;
 
   if (currentRow > lineRow){
     currentRow = (-1*velocity);
@@ -108,71 +141,11 @@ void wdt_c_handler()
       correct --;
   }
 
-  if (playTheme){
-    switch (interrupts){
-    case 41:
-      play5C();
-      break;
-    case 62:
-      buzzer_set_period(0);
-      break;
-    case 82:
-      play5C();
-      break;
-    case 103:
-      buzzer_set_period(0);
-      break;
-    case 123:
-      play5C();
-      break;
-    case 144:
-      buzzer_set_period(0);
-      break;
-    case 165:
-      play5C();
-      break;
-    case 210:
-      buzzer_set_period(0);
-      break;
-    case 230:
-      play4G();
-      break;
-    case 280:
-      buzzer_set_period(0);
-      break;
-    case 300:
-      play4A();
-      break;
-    case 350:
-      buzzer_set_period(0);
-      break;
-    case 370:
-      play5C();
-      break;
-    case 400:
-      buzzer_set_period(0);
-      break;
-    case 420:
-      play4A();
-      break;
-    case 450:
-      buzzer_set_period(0);
-      break;
-    case 460:
-      play5C();
-      break;
-    case 500:
-      buzzer_set_period(0);
-      correct = 0;
-      playTheme = 0;
-      break;
-      
-      
-    }
-    
+  if (playSkrillex){
+    play_scaryMonster();
+    correct = 0;
   }
 }
-
 
 void __interrupt_vec(PORT2_VECTOR) Port_2()
 {
@@ -246,13 +219,7 @@ void main()
       for (int i = 0; i < screenWidth; i++){ 
          drawPixel(i, lineRow, LINE_COLOR);   
       }
-    }
-    /*  if(correct)
-      playSound();               In case he wants sound to only be done by main
-    else
-      incorrectPress();
-    */              
-    
+    } 
     P1OUT &= ~LED;
     or_sr(0x10);   //turning off cpu
     P1OUT |= LED;

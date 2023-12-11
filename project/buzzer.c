@@ -25,7 +25,7 @@ void buzzer_set_period(short cycles) /* buzzer clock = 2MHz.  (period of 1k resu
 }
 
 void play4D(){
-  buzzer_set_period(6811);
+  buzzer_set_period(6000);
 }
 
 void play4F(){
