@@ -23,7 +23,7 @@ loadA: gameA.elf
 	msp430loader.sh $^
 
 clean:
-	rm -f *.o *.elf
+	rm -f *.o *.elf *.c~ *.h~ *.s~
 
 buzzer.c: buzzer.h
 main.c: buzzer.h

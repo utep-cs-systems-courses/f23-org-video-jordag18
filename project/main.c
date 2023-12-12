@@ -23,7 +23,7 @@ short currentRow = 0;
 short velocity = 30;
 short height = 30;
 short lineRow = 100;
-
+char* velInfo  = "10";
 short controlCol = (screenWidth/2) - 20;
 short controlRow = 0;
 
@@ -77,6 +77,9 @@ void draw()
     drawRectOutline(0, 0, 5, 50, COLOR_PURPLE);
     fillRectangle(0, 0, 5, 50, BG_COLOR);
     fillRectangle(0, 0, 5, 10*correct, COLOR_PURPLE);
+
+    drawString5x7(screenWidth - 30, 10, "Speed:", COLOR_WHITE, BG_COLOR);
+    drawString5x7(screenWidth - 20, 20, velInfo, COLOR_WHITE, BG_COLOR);
     
     or_sr(8);  //Unmasking interrupts
   }
@@ -169,6 +172,15 @@ void __interrupt_vec(PORT2_VECTOR) Port_2()
       velocity += 20;
     else
       velocity = 10;
+    if (velocity == 10){
+      velInfo = "10";
+    }
+    else if (velocity == 30){
+      velInfo = "30";
+    }
+    else
+      velInfo = "50";
+    
   }
   else if (P2IFG & TSW3){                //Change color
     P2IFG &= ~TSW3;
